@@ -21,6 +21,11 @@ const StudentDashboard = () => {
   const [selectedDoubt, setSelectedDoubt] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [searchFilter, setSearchFilter] = useState('');
+  
+  // Raven Modal State
+  const [showRavenModal, setShowRavenModal] = useState(false);
+  const [ravenMessage, setRavenMessage] = useState('');
+  const [ravenSent, setRavenSent] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchFilter(searchInput), 400);
@@ -274,17 +279,89 @@ const StudentDashboard = () => {
                  <p className="text-sm font-cormorant text-[#D7D3C8]/80 leading-relaxed mb-4">
                    If your quest is of utmost urgency, dispatch a raven to the Masters of the Archives, citing your tracker ID.
                  </p>
-                 <a 
-                   href="mailto:masters@smartdoubt.com?subject=Urgent%20Counsel%20Requested&body=I%20seek%20urgent%20guidance.%20My%20tracker%20ID%20is:%20"
+                 <button 
+                   onClick={() => { setShowRavenModal(true); setRavenSent(false); setRavenMessage(''); }}
                    className="text-xs font-bold px-4 py-2 bg-[#C9A227] text-[#0F2E1D] rounded-lg hover:bg-[#D4AF37] transition-all shadow-[0_0_10px_rgba(201,162,39,0.3)] hover:shadow-[0_0_15px_rgba(201,162,39,0.5)]"
                  >
                    Dispatch Raven
-                 </a>
+                 </button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {/* ═══════ RAVEN MODAL ═══════ */}
+      <AnimatePresence>
+        {showRavenModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#111111] border border-[#C9A227]/40 rounded-2xl shadow-[0_0_30px_rgba(201,162,39,0.15)] max-w-md w-full overflow-hidden"
+            >
+              <div className="p-6 border-b border-[#2B1D12]">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-cinzel font-bold text-xl text-[#C9A227] tracking-wider">Dispatch a Raven</h3>
+                  <button onClick={() => setShowRavenModal(false)} className="text-[#D7D3C8]/50 hover:text-[#C9A227] transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {ravenSent ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-[#0F2E1D] rounded-full mx-auto mb-4 flex items-center justify-center border border-[#C9A227]/30">
+                      <MessageSquare className="w-8 h-8 text-[#C9A227]" />
+                    </div>
+                    <h4 className="font-cinzel font-bold text-lg text-[#F8F6F0] mb-2">Raven Dispatched!</h4>
+                    <p className="font-cormorant text-[#D7D3C8]/80">The Masters have received your urgent plea. They will seek you out shortly.</p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="font-cormorant text-[#D7D3C8]/80 mb-4 leading-relaxed">
+                      Pen your urgent message to the faculty. Include any relevant tracking numbers or specifics of your plight.
+                    </p>
+                    <textarea
+                      value={ravenMessage}
+                      onChange={(e) => setRavenMessage(e.target.value)}
+                      placeholder="My lords, I seek guidance regarding..."
+                      className="w-full h-32 bg-[#1a1410] border border-[#2B1D12] rounded-xl p-4 text-[#F8F6F0] text-sm focus:ring-1 focus:ring-[#C9A227] focus:border-[#C9A227] outline-none resize-none font-sans"
+                    ></textarea>
+                    
+                    <div className="flex justify-end gap-3 mt-6">
+                      <button 
+                        onClick={() => setShowRavenModal(false)}
+                        className="px-4 py-2 text-sm font-bold text-[#D7D3C8]/70 hover:text-[#F8F6F0] transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        disabled={!ravenMessage.trim()}
+                        onClick={() => {
+                          setRavenSent(true);
+                          setTimeout(() => setShowRavenModal(false), 3000);
+                        }}
+                        className="px-5 py-2 bg-[#0F2E1D] text-[#C9A227] border border-[#C9A227]/30 font-bold text-sm rounded-lg hover:bg-[#1a4a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Send Raven
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };
