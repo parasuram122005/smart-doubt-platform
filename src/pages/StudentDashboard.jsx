@@ -269,12 +269,17 @@ const StudentDashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-theme-accent/10 to-theme-bg p-6 rounded-2xl border border-theme-accent/20 flex flex-col items-start">
-                 <h4 className="font-bold text-theme-text mb-2">Need priority support?</h4>
-                 <p className="text-xs text-theme-text-muted leading-relaxed mb-4">
-                   If your doubt is exceptionally urgent, approach your faculty coordinator or ping them on the internal MS Teams channel referring to your Tracker ID.
+              <div className="bg-[#111111] p-6 rounded-2xl border border-[#C9A227]/30 shadow-[inset_0_0_15px_rgba(201,162,39,0.05)] flex flex-col items-start">
+                 <h4 className="font-cinzel font-bold text-[#C9A227] mb-2 tracking-wider">Require Urgent Counsel?</h4>
+                 <p className="text-sm font-cormorant text-[#D7D3C8]/80 leading-relaxed mb-4">
+                   If your quest is of utmost urgency, dispatch a raven to the Masters of the Archives, citing your tracker ID.
                  </p>
-                 <button className="text-xs font-bold px-3 py-1.5 bg-theme-accent text-white rounded-lg hover:bg-theme-accent-hover transition-colors">Documentation</button>
+                 <a 
+                   href="mailto:masters@smartdoubt.com?subject=Urgent%20Counsel%20Requested&body=I%20seek%20urgent%20guidance.%20My%20tracker%20ID%20is:%20"
+                   className="text-xs font-bold px-4 py-2 bg-[#C9A227] text-[#0F2E1D] rounded-lg hover:bg-[#D4AF37] transition-all shadow-[0_0_10px_rgba(201,162,39,0.3)] hover:shadow-[0_0_15px_rgba(201,162,39,0.5)]"
+                 >
+                   Dispatch Raven
+                 </a>
               </div>
             </motion.div>
           )}
