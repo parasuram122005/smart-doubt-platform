@@ -26,6 +26,9 @@ const StudentDashboard = () => {
   const [showRavenModal, setShowRavenModal] = useState(false);
   const [ravenMessage, setRavenMessage] = useState('');
   const [ravenSent, setRavenSent] = useState(false);
+  
+  // Received Raven Replies
+  const [ravenReplies, setRavenReplies] = useState([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchFilter(searchInput), 400);
@@ -45,8 +48,28 @@ const StudentDashboard = () => {
         setLoading(false);
       }
     };
+    const fetchNotifications = async () => {
+      try {
+        const { data } = await API.get('/notifications');
+        if (data.success) {
+          setRavenReplies(data.data.filter(n => n.type === 'raven_reply' && !n.read) || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch notifications', err);
+      }
+    };
     fetchMyDoubts();
+    fetchNotifications();
   }, [searchFilter]);
+
+  const markReplyAsRead = async (id) => {
+    try {
+      await API.put(`/notifications/${id}/read`);
+      setRavenReplies(prev => prev.filter(r => r._id !== id));
+    } catch (err) {
+      console.error('Failed to mark reply as read:', err);
+    }
+  };
 
   const filteredDoubts = useMemo(() => {
     let filtered = doubts;
@@ -273,6 +296,30 @@ const StudentDashboard = () => {
                    <ActivityTimeline activities={getMockActivityTimeline(doubts)} />
                 </div>
               </div>
+
+              {ravenReplies.map(reply => (
+                <div key={reply._id} className="bg-[#111111] p-6 rounded-2xl border border-[#C9A227]/50 shadow-[0_0_20px_rgba(201,162,39,0.15)] flex flex-col items-start relative overflow-hidden">
+                   <div className="absolute top-0 left-0 w-1 h-full bg-[#C9A227]"></div>
+                   <div className="flex items-center gap-3 mb-3">
+                     <MessageSquare className="w-5 h-5 text-[#C9A227]" />
+                     <h4 className="font-cinzel font-bold text-[#C9A227] tracking-wider uppercase text-sm">Response from the Masters</h4>
+                   </div>
+                   <div className="w-full bg-[#1a1410] border border-[#2B1D12] p-4 rounded-xl mb-4">
+                     <p className="text-sm font-cormorant text-[#F8F6F0] italic leading-relaxed whitespace-pre-wrap">
+                       "{reply.message.split(':').slice(1).join(':').trim()}"
+                     </p>
+                     <p className="mt-3 text-xs font-bold text-[#C9A227] text-right uppercase tracking-widest font-cinzel">
+                       — {reply.message.split(':')[0].replace('RAVEN REPLY from ', '')}
+                     </p>
+                   </div>
+                   <button 
+                     onClick={() => markReplyAsRead(reply._id)}
+                     className="text-xs font-bold px-4 py-2 border border-[#C9A227]/30 text-[#D7D3C8] rounded-lg hover:text-[#C9A227] hover:border-[#C9A227] transition-all self-end"
+                   >
+                     Acknowledge
+                   </button>
+                </div>
+              ))}
 
               <div className="bg-[#111111] p-6 rounded-2xl border border-[#C9A227]/30 shadow-[inset_0_0_15px_rgba(201,162,39,0.05)] flex flex-col items-start">
                  <h4 className="font-cinzel font-bold text-[#C9A227] mb-2 tracking-wider">Require Urgent Counsel?</h4>

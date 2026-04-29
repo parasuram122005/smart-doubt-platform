@@ -32,6 +32,8 @@ const FacultyDashboard = () => {
   // Ravens data
   const [ravens, setRavens] = useState([]);
   const [ravensLoading, setRavensLoading] = useState(false);
+  const [ravenReply, setRavenReply] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
 
   const [selectedDoubt, setSelectedDoubt] = useState(null);
 
@@ -94,6 +96,21 @@ const FacultyDashboard = () => {
       fetchRavens();
     } catch (err) {
       console.error('Failed to mark raven as read:', err);
+    }
+  };
+
+  const handleRavenReply = async () => {
+    if (!ravenReply.trim() || !selectedDoubt) return;
+    try {
+      setIsReplying(true);
+      await API.post(`/notifications/raven/reply/${selectedDoubt._id}`, { replyMessage: ravenReply });
+      setSelectedDoubt(null);
+      setRavenReply('');
+      fetchRavens();
+    } catch (err) {
+      console.error('Failed to send raven reply:', err);
+    } finally {
+      setIsReplying(false);
     }
   };
 
@@ -218,7 +235,7 @@ const FacultyDashboard = () => {
               )}
             </button>
             <button
-              onClick={() => { setActiveView('ravens'); setSelectedDoubt(null); }}
+              onClick={() => { setActiveView('ravens'); setSelectedDoubt(null); setRavenReply(''); }}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
                 activeView === 'ravens'
                   ? 'bg-[#0F2E1D] text-[#C9A227] shadow-sm'
@@ -257,7 +274,7 @@ const FacultyDashboard = () => {
                {displayList.map(item => (
                  <div 
                    key={item._id}
-                   onClick={() => setSelectedDoubt(item)}
+                   onClick={() => { setSelectedDoubt(item); setRavenReply(''); }}
                    className={`p-4 cursor-pointer transition-colors ${selectedDoubt?._id === item._id ? 'bg-theme-bg/80 border-l-4 border-theme-accent pl-3' : 'hover:bg-theme-bg/50 border-l-4 border-transparent pl-3'}`}
                  >
                    <div className="flex justify-between items-start mb-2">
@@ -319,28 +336,57 @@ const FacultyDashboard = () => {
                </p>
             </div>
          ) : activeView === 'ravens' ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#111111] relative overflow-hidden">
-               <div className="absolute inset-0 border-[10px] border-[#0F2E1D]/50 pointer-events-none rounded-2xl shadow-[inset_0_0_50px_rgba(201,162,39,0.1)]"></div>
-               <MessageSquare className="w-16 h-16 text-[#C9A227] mb-6 drop-shadow-[0_0_15px_rgba(201,162,39,0.5)]" />
-               <h3 className="text-3xl font-cinzel font-bold text-[#C9A227] mb-2 tracking-wider uppercase">Urgent Counsel Request</h3>
-               <div className="w-24 h-px bg-[#C9A227]/30 mb-6"></div>
-               <div className="max-w-lg w-full bg-[#1a1410] border border-[#2B1D12] p-8 rounded-xl shadow-soft">
-                 <p className="font-cormorant text-xl text-[#F8F6F0] italic leading-relaxed text-left whitespace-pre-wrap">
-                   "{selectedDoubt.message.split(':').slice(1).join(':').trim()}"
-                 </p>
-                 <p className="mt-6 text-sm font-bold text-[#C9A227] text-right uppercase tracking-widest font-cinzel">
-                   — {selectedDoubt.message.split(':')[0].replace('URGENT RAVEN from ', '')}
-                 </p>
-               </div>
-               <div className="mt-12 z-10">
-                 <button 
-                   onClick={() => markRavenAsRead(selectedDoubt._id)}
-                   className="px-6 py-3 bg-[#C9A227] text-[#0F2E1D] font-bold text-sm uppercase tracking-wider rounded-lg hover:bg-[#D4AF37] transition-all shadow-[0_0_15px_rgba(201,162,39,0.3)] hover:shadow-[0_0_25px_rgba(201,162,39,0.5)]"
-                 >
-                   Acknowledge & Archive
-                 </button>
-               </div>
-            </div>
+             <div className="flex-1 flex flex-col p-8 bg-[#111111] relative overflow-hidden">
+                <div className="absolute inset-0 border-[10px] border-[#0F2E1D]/50 pointer-events-none rounded-2xl shadow-[inset_0_0_50px_rgba(201,162,39,0.1)]"></div>
+                
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-16 h-16 bg-[#0F2E1D] border border-[#C9A227]/30 rounded-2xl flex items-center justify-center shadow-soft shrink-0">
+                    <MessageSquare className="w-8 h-8 text-[#C9A227]" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-cinzel font-bold text-[#C9A227] tracking-wider uppercase">Urgent Counsel Request</h3>
+                    <p className="text-sm font-bold text-[#D7D3C8]/60 tracking-widest font-cinzel">
+                      From {selectedDoubt.message.split(':')[0].replace('URGENT RAVEN from ', '')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-4 mb-6 space-y-6">
+                  {/* Student Message */}
+                  <div className="bg-[#1a1410] border border-[#2B1D12] p-6 rounded-xl shadow-soft">
+                    <p className="font-cormorant text-xl text-[#F8F6F0] italic leading-relaxed whitespace-pre-wrap">
+                      "{selectedDoubt.message.split(':').slice(1).join(':').trim()}"
+                    </p>
+                  </div>
+                  
+                  {/* Reply Area */}
+                  <div>
+                    <h4 className="font-cinzel text-sm font-bold text-[#C9A227] mb-3 uppercase tracking-wider">Your Response</h4>
+                    <textarea
+                      value={ravenReply}
+                      onChange={(e) => setRavenReply(e.target.value)}
+                      placeholder="Pen your guidance here..."
+                      className="w-full h-32 bg-[#1a1410] border border-[#2B1D12] rounded-xl p-4 text-[#F8F6F0] text-sm focus:ring-1 focus:ring-[#C9A227] focus:border-[#C9A227] outline-none resize-none font-sans"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div className="z-10 flex gap-4 pt-4 border-t border-[#2B1D12]">
+                  <button 
+                    onClick={() => markRavenAsRead(selectedDoubt._id)}
+                    className="px-6 py-3 border border-[#C9A227]/30 text-[#D7D3C8] font-bold text-sm uppercase tracking-wider rounded-lg hover:bg-[#1a1410] hover:text-[#C9A227] transition-all"
+                  >
+                    Dismiss
+                  </button>
+                  <button 
+                    disabled={!ravenReply.trim() || isReplying}
+                    onClick={handleRavenReply}
+                    className="flex-1 py-3 bg-[#C9A227] text-[#0F2E1D] font-bold text-sm uppercase tracking-wider rounded-lg hover:bg-[#D4AF37] transition-all shadow-[0_0_15px_rgba(201,162,39,0.3)] hover:shadow-[0_0_25px_rgba(201,162,39,0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isReplying ? 'Sending...' : 'Send Reply & Archive'}
+                  </button>
+                </div>
+             </div>
          ) : (
             <div className="flex-1 flex flex-col overflow-hidden">
                {/* Detail Header Context */}
