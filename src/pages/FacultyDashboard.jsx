@@ -7,7 +7,7 @@ import AIAnswerCard from '../components/AIAnswerCard';
 import VerificationBanner from '../components/VerificationBanner';
 import Banner from '../components/Banner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Info, Mail, BookOpen, AlertCircle, CheckCircle, Inbox, Calendar } from 'lucide-react';
+import { Search, Info, Mail, BookOpen, AlertCircle, CheckCircle, Inbox, Calendar, MessageSquare } from 'lucide-react';
 import { Avatar } from '../components/ui/Avatar';
 
 const FacultyDashboard = () => {
@@ -29,6 +29,10 @@ const FacultyDashboard = () => {
   const [resolvedLoading, setResolvedLoading] = useState(false);
   const [resolvedFetched, setResolvedFetched] = useState(false);
   
+  // Ravens data
+  const [ravens, setRavens] = useState([]);
+  const [ravensLoading, setRavensLoading] = useState(false);
+
   const [selectedDoubt, setSelectedDoubt] = useState(null);
 
   useEffect(() => {
@@ -69,10 +73,36 @@ const FacultyDashboard = () => {
     }
   }, [searchFilter]);
 
+  const fetchRavens = async () => {
+    try {
+      setRavensLoading(true);
+      const { data } = await API.get('/notifications');
+      if (data.success) {
+        setRavens(data.data.filter(n => n.type === 'raven' && !n.read) || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch ravens:', err);
+    } finally {
+      setRavensLoading(false);
+    }
+  };
+
+  const markRavenAsRead = async (id) => {
+    try {
+      await API.put(`/notifications/${id}/read`);
+      setSelectedDoubt(null);
+      fetchRavens();
+    } catch (err) {
+      console.error('Failed to mark raven as read:', err);
+    }
+  };
+
   // Fetch data when tab switches or search changes
   useEffect(() => {
     if (activeView === 'resolved') {
       fetchResolvedDoubts(searchFilter);
+    } else if (activeView === 'ravens') {
+      fetchRavens();
     } else {
       fetchOpenDoubts(searchFilter);
     }
@@ -109,13 +139,14 @@ const FacultyDashboard = () => {
   }, [allDoubts, user, activeView]);
 
   // The list to show in the left pane
-  const displayList = activeView === 'resolved' ? resolvedDoubts : viewDoubts;
-  const isListLoading = activeView !== 'resolved' ? loading : resolvedLoading;
+  const displayList = activeView === 'resolved' ? resolvedDoubts : activeView === 'ravens' ? ravens : viewDoubts;
+  const isListLoading = activeView === 'resolved' ? resolvedLoading : activeView === 'ravens' ? ravensLoading : loading;
 
   // Stats
   const resolvedCount = resolvedDoubts.length;
   const openCount = allDoubts.filter(d => d.status === 'PENDING' || d.status === 'AI_ANSWERED').length;
   const claimedCount = allDoubts.filter(d => d.status === 'CLAIMED' && d.facultyId?._id === (user?.id || user?._id)).length;
+  const ravenCount = ravens.length;
 
   if (loading && activeView !== 'resolved') {
      return (
@@ -186,6 +217,20 @@ const FacultyDashboard = () => {
                 <span className="bg-emerald-50 text-emerald-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">{resolvedCount}</span>
               )}
             </button>
+            <button
+              onClick={() => { setActiveView('ravens'); setSelectedDoubt(null); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+                activeView === 'ravens'
+                  ? 'bg-[#0F2E1D] text-[#C9A227] shadow-sm'
+                  : 'text-theme-text-muted hover:text-[#C9A227]'
+              }`}
+            >
+              <MessageSquare className="w-3.5 h-3.5" />
+              Ravens
+              {ravenCount > 0 && (
+                <span className="bg-[#C9A227] text-[#0F2E1D] text-[10px] font-bold px-1.5 py-0.5 rounded-md">{ravenCount}</span>
+              )}
+            </button>
           </div>
           <div className="relative">
              <Search className="absolute left-3 top-2.5 w-4 h-4 text-theme-text-muted" />
@@ -209,27 +254,40 @@ const FacultyDashboard = () => {
              </div>
            ) : (
              <div className="divide-y divide-theme-border/40">
-               {displayList.map(doubt => (
+               {displayList.map(item => (
                  <div 
-                   key={doubt._id}
-                   onClick={() => setSelectedDoubt(doubt)}
-                   className={`p-4 cursor-pointer transition-colors ${selectedDoubt?._id === doubt._id ? 'bg-theme-bg/80 border-l-4 border-theme-accent pl-3' : 'hover:bg-theme-bg/50 border-l-4 border-transparent pl-3'}`}
+                   key={item._id}
+                   onClick={() => setSelectedDoubt(item)}
+                   className={`p-4 cursor-pointer transition-colors ${selectedDoubt?._id === item._id ? 'bg-theme-bg/80 border-l-4 border-theme-accent pl-3' : 'hover:bg-theme-bg/50 border-l-4 border-transparent pl-3'}`}
                  >
                    <div className="flex justify-between items-start mb-2">
-                      <StatusBadge status={doubt.status} className="scale-90 origin-left" />
+                      {activeView === 'ravens' ? (
+                        <span className="text-xs font-cinzel font-bold text-[#C9A227] tracking-wider uppercase">Urgent Plea</span>
+                      ) : (
+                        <StatusBadge status={item.status} className="scale-90 origin-left" />
+                      )}
                       <span className="text-[10px] text-theme-text-muted font-medium uppercase tracking-widest">
-                        {new Date(doubt.updatedAt || doubt.createdAt).toLocaleDateString()}
+                        {new Date(item.updatedAt || item.createdAt).toLocaleDateString()}
                       </span>
                    </div>
-                   <h4 className="font-bold text-theme-text text-sm mb-1 leading-snug line-clamp-2">{doubt.title}</h4>
-                   <div className="flex items-center text-xs text-theme-text-muted mt-2">
-                      <Avatar name={doubt.studentId?.name} className="w-5 h-5 text-[8px] mr-2 ring-1 ring-theme-border" />
-                      <span className="truncate">{doubt.studentId?.name || 'Anonymous Student'}</span>
-                   </div>
+                   <h4 className="font-bold text-theme-text text-sm mb-1 leading-snug line-clamp-2">
+                     {activeView === 'ravens' ? item.message.split(':')[0] : item.title}
+                   </h4>
+                   {activeView !== 'ravens' && (
+                     <div className="flex items-center text-xs text-theme-text-muted mt-2">
+                        <Avatar name={item.studentId?.name} className="w-5 h-5 text-[8px] mr-2 ring-1 ring-theme-border" />
+                        <span className="truncate">{item.studentId?.name || 'Anonymous Student'}</span>
+                     </div>
+                   )}
                    {/* Show answer preview for resolved */}
-                   {activeView === 'resolved' && doubt.answer && (
+                   {activeView === 'resolved' && item.answer && (
                      <p className="mt-2 text-xs text-theme-text-muted line-clamp-1 italic">
-                       "{doubt.answer.substring(0, 80)}..."
+                       "{item.answer.substring(0, 80)}..."
+                     </p>
+                   )}
+                   {activeView === 'ravens' && (
+                     <p className="mt-2 text-xs text-[#D7D3C8]/80 line-clamp-2 italic font-cormorant">
+                       "{item.message.split(':').slice(1).join(':').trim()}"
                      </p>
                    )}
                  </div>
@@ -251,12 +309,37 @@ const FacultyDashboard = () => {
                <div className="w-16 h-16 bg-theme-bg rounded-2xl flex items-center justify-center border border-theme-border shadow-sm mb-4">
                   <Info className="w-8 h-8 text-theme-text-muted" />
                </div>
-               <h3 className="text-xl font-bold text-theme-text">No Thread Selected</h3>
+               <h3 className="text-xl font-bold text-theme-text">No Item Selected</h3>
                <p className="mt-2 text-theme-text-muted text-sm max-w-sm">
                  {activeView === 'resolved' 
                    ? 'Select a resolved doubt from the left to review your answer and student details.'
+                   : activeView === 'ravens'
+                   ? 'Select an urgent raven to view its contents.'
                    : 'Select a doubt from the stream on the left to view full context, claim it, or draft your answer.'}
                </p>
+            </div>
+         ) : activeView === 'ravens' ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#111111] relative overflow-hidden">
+               <div className="absolute inset-0 border-[10px] border-[#0F2E1D]/50 pointer-events-none rounded-2xl shadow-[inset_0_0_50px_rgba(201,162,39,0.1)]"></div>
+               <MessageSquare className="w-16 h-16 text-[#C9A227] mb-6 drop-shadow-[0_0_15px_rgba(201,162,39,0.5)]" />
+               <h3 className="text-3xl font-cinzel font-bold text-[#C9A227] mb-2 tracking-wider uppercase">Urgent Counsel Request</h3>
+               <div className="w-24 h-px bg-[#C9A227]/30 mb-6"></div>
+               <div className="max-w-lg w-full bg-[#1a1410] border border-[#2B1D12] p-8 rounded-xl shadow-soft">
+                 <p className="font-cormorant text-xl text-[#F8F6F0] italic leading-relaxed text-left whitespace-pre-wrap">
+                   "{selectedDoubt.message.split(':').slice(1).join(':').trim()}"
+                 </p>
+                 <p className="mt-6 text-sm font-bold text-[#C9A227] text-right uppercase tracking-widest font-cinzel">
+                   — {selectedDoubt.message.split(':')[0].replace('URGENT RAVEN from ', '')}
+                 </p>
+               </div>
+               <div className="mt-12 z-10">
+                 <button 
+                   onClick={() => markRavenAsRead(selectedDoubt._id)}
+                   className="px-6 py-3 bg-[#C9A227] text-[#0F2E1D] font-bold text-sm uppercase tracking-wider rounded-lg hover:bg-[#D4AF37] transition-all shadow-[0_0_15px_rgba(201,162,39,0.3)] hover:shadow-[0_0_25px_rgba(201,162,39,0.5)]"
+                 >
+                   Acknowledge & Archive
+                 </button>
+               </div>
             </div>
          ) : (
             <div className="flex-1 flex flex-col overflow-hidden">

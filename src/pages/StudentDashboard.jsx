@@ -345,9 +345,14 @@ const StudentDashboard = () => {
                       </button>
                       <button 
                         disabled={!ravenMessage.trim()}
-                        onClick={() => {
-                          setRavenSent(true);
-                          setTimeout(() => setShowRavenModal(false), 3000);
+                        onClick={async () => {
+                          try {
+                            await API.post('/notifications/raven', { message: ravenMessage });
+                            setRavenSent(true);
+                            setTimeout(() => setShowRavenModal(false), 3000);
+                          } catch (err) {
+                            console.error('Failed to send raven', err);
+                          }
                         }}
                         className="px-5 py-2 bg-[#0F2E1D] text-[#C9A227] border border-[#C9A227]/30 font-bold text-sm rounded-lg hover:bg-[#1a4a2e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
