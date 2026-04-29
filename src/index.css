@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cinzel:wght@400;600;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Default / Unauthenticated (Mist / Shadow) */
+  --bg-app: #111111;
+  --bg-sidebar: #0F2E1D;
+  --bg-card: #1a1a1a;
+  --color-accent: #C9A227; 
+  --color-accent-hover: #e0b83b;
+  --color-text-primary: #F8F6F0;
+  --color-text-secondary: #D7D3C8;
+  --color-border: #2B1D12;
+  
+  /* Core LOTR Palette for utilities */
+  --color-lotr-green: #0F2E1D;
+  --color-ancient-gold: #C9A227;
+  --color-stone-silver: #D7D3C8;
+  --color-deep-oak: #2B1D12;
+  --color-shadow-black: #111111;
+  --color-parchment: #F8F6F0;
+}
+
+[data-theme="student"] {
+  /* Dark forest + parchment accents */
+  --bg-app: #0F2E1D;
+  --bg-sidebar: #111111; 
+  --bg-card: #F8F6F0; /* Parchment cards */
+  --color-accent: #C9A227;
+  --color-accent-hover: #a6841b;
+  --color-text-primary: #F8F6F0; /* App text is light */
+  --color-text-secondary: #D7D3C8;
+  --color-border: #2B1D12;
+}
+
+[data-theme="faculty"] {
+  /* Noble stone + gold + green */
+  --bg-app: #D7D3C8;
+  --bg-sidebar: #0F2E1D;
+  --bg-card: #F8F6F0;
+  --color-accent: #C9A227;
+  --color-accent-hover: #a6841b;
+  --color-text-primary: #111111;
+  --color-text-secondary: #2B1D12;
+  --color-border: #a3a096;
+}
+
+[data-theme="admin"] {
+  /* Gondor control room */
+  --bg-app: #111111;
+  --bg-sidebar: #2B1D12; 
+  --bg-card: #1c1c1c;
+  --color-accent: #D7D3C8; 
+  --color-accent-hover: #ffffff;
+  --color-text-primary: #F8F6F0;
+  --color-text-secondary: #C9A227;
+  --color-border: #3A241C;
+}
+
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-cinzel: 'Cinzel', serif;
+  --font-cormorant: 'Cormorant Garamond', serif;
+  
+  --color-theme-bg: var(--bg-app);
+  --color-theme-sidebar: var(--bg-sidebar);
+  --color-theme-card: var(--bg-card);
+  --color-theme-accent: var(--color-accent);
+  --color-theme-accent-hover: var(--color-accent-hover);
+  --color-theme-text: var(--color-text-primary);
+  --color-theme-text-muted: var(--color-text-secondary);
+  --color-theme-border: var(--color-border);
+}
+
+/* Fix chart text color in deep dark content mode */
+[data-theme="admin"] .recharts-text {
+  fill: var(--color-text-secondary) !important;
+}
+[data-theme="admin"] .recharts-cartesian-grid-horizontal line,
+[data-theme="admin"] .recharts-cartesian-grid-vertical line {
+  stroke: var(--color-border) !important;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.5s ease-in-out;
+}
+
+/* Custom Utilities for micro-interactions */
+.glass-panel {
+  background: rgba(17, 17, 17, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+}
+
+.shadow-soft {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.shadow-hover {
+  box-shadow: 0 10px 30px -4px rgba(201, 162, 39, 0.15);
+}
+
+/* Parchment cards need dark text, overriding global light text for student theme */
+[data-theme="student"] .bg-theme-card,
+[data-theme="student"] .bg-white {
+  background-color: var(--color-parchment) !important;
+  color: var(--color-shadow-black) !important;
+  border-color: var(--color-ancient-gold) !important;
+}
+
+[data-theme="student"] .bg-theme-card h1,
+[data-theme="student"] .bg-theme-card h2,
+[data-theme="student"] .bg-theme-card h3,
+[data-theme="student"] .bg-theme-card h4,
+[data-theme="student"] .bg-theme-card p,
+[data-theme="student"] .bg-theme-card span,
+[data-theme="student"] .bg-white h1,
+[data-theme="student"] .bg-white h2,
+[data-theme="student"] .bg-white h3,
+[data-theme="student"] .bg-white h4,
+[data-theme="student"] .bg-white p,
+[data-theme="student"] .bg-white span {
+  color: var(--color-shadow-black) !important;
+}
+
+[data-theme="student"] .bg-theme-card .text-theme-text-muted,
+[data-theme="student"] .bg-white .text-theme-text-muted {
+  color: var(--color-deep-oak) !important;
+}
+
+/* Strictly scoped table hover for Admin cinematic theme */
+[data-theme="admin"] tr:hover {
+  background-color: rgba(215, 211, 200, 0.05) !important;
+}
